@@ -1,0 +1,255 @@
+///////////////////////////////////////////////////////////////////////////
+// DRUG
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (d:Drug {
+    id:"ABASAGLAR",
+    name:"ABASAGLAR",
+    atc:"A10AE04"
+})
+
+SET d.biologic = true,
+    d.type = "Long-acting insulin analogue"
+
+///////////////////////////////////////////////////////////////////////////
+// ACTIVE INGREDIENT
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (ig:Ingredient {
+    name:"Insulin glargine"
+})
+
+MERGE (d)-[:HAS_ACTIVE_INGREDIENT]->(ig)
+
+///////////////////////////////////////////////////////////////////////////
+// DRUG CLASS
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (dc:DrugClass {
+    name:"Long-acting insulin analogue"
+})
+
+MERGE (d)-[:BELONGS_TO_CLASS]->(dc)
+
+///////////////////////////////////////////////////////////////////////////
+// DOSAGE FORM
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (df:DosageForm {
+    name:"Injection solution"
+})
+
+MERGE (d)-[:HAS_DOSAGE_FORM]->(df)
+
+///////////////////////////////////////////////////////////////////////////
+// STRENGTH
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (s:Strength {
+    value:"100 units/ml"
+})
+
+MERGE (d)-[:HAS_STRENGTH]->(s)
+
+///////////////////////////////////////////////////////////////////////////
+// ROUTE
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (r:Route {
+    name:"Subcutaneous"
+})
+
+MERGE (d)-[:ADMINISTERED_VIA]->(r)
+
+///////////////////////////////////////////////////////////////////////////
+// INDICATION
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (dm:Disease {
+    name:"Diabetes mellitus"
+})
+
+MERGE (d)-[:INDICATED_FOR]->(dm)
+
+///////////////////////////////////////////////////////////////////////////
+// POPULATIONS
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (adult:Population {name:"Adults"})
+MERGE (adol:Population {name:"Adolescents"})
+MERGE (child:Population {name:"Children >=2 years"})
+MERGE (elderly:Population {name:"Elderly"})
+
+MERGE (d)-[:RECOMMENDED_FOR]->(adult)
+MERGE (d)-[:RECOMMENDED_FOR]->(adol)
+MERGE (d)-[:RECOMMENDED_FOR]->(child)
+MERGE (d)-[:RECOMMENDED_FOR]->(elderly)
+
+///////////////////////////////////////////////////////////////////////////
+// DOSING EVENT
+///////////////////////////////////////////////////////////////////////////
+
+CREATE (dose:DoseRecommendation {
+    id:randomUUID(),
+    frequency:"Once daily",
+    individualized:true
+})
+
+MERGE (d)-[:HAS_DOSE_RECOMMENDATION]->(dose)
+MERGE (dose)-[:FOR_ROUTE]->(r)
+MERGE (dose)-[:FOR_DISEASE]->(dm)
+MERGE (dose)-[:FOR_POPULATION]->(adult)
+
+///////////////////////////////////////////////////////////////////////////
+// CONTRAINDICATION EVENT
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (hs:Condition {
+    name:"Hypersensitivity"
+})
+
+CREATE (contra:Contraindication {
+    id:randomUUID(),
+    severity:"Absolute",
+    source:"Section 4.3"
+})
+
+MERGE (d)-[:HAS_CONTRAINDICATION]->(contra)
+MERGE (contra)-[:CONDITION]->(hs)
+
+///////////////////////////////////////////////////////////////////////////
+// ADVERSE EVENT
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (hypo:AdverseEvent {
+    name:"Hypoglycemia"
+})
+
+MERGE (vc:Frequency {
+    name:"Very common"
+})
+
+CREATE (ae1:AdverseEventOccurrence {
+    id:randomUUID(),
+    section:"4.8"
+})
+
+MERGE (d)-[:HAS_ADVERSE_EVENT]->(ae1)
+MERGE (ae1)-[:EVENT]->(hypo)
+MERGE (ae1)-[:FREQUENCY]->(vc)
+MERGE (ae1)-[:OBSERVED_IN]->(adult)
+
+///////////////////////////////////////////////////////////////////////////
+// ANOTHER ADVERSE EVENT
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (lipo:AdverseEvent {
+    name:"Lipodystrophy"
+})
+
+MERGE (common:Frequency {
+    name:"Common"
+})
+
+CREATE (ae2:AdverseEventOccurrence {
+    id:randomUUID()
+})
+
+MERGE (d)-[:HAS_ADVERSE_EVENT]->(ae2)
+MERGE (ae2)-[:EVENT]->(lipo)
+MERGE (ae2)-[:FREQUENCY]->(common)
+
+///////////////////////////////////////////////////////////////////////////
+// DRUG INTERACTION
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (pio:Drug {
+    name:"Pioglitazone"
+})
+
+MERGE (hf:Disease {
+    name:"Heart failure"
+})
+
+CREATE (int1:DrugInteraction {
+    id:randomUUID(),
+    recommendation:"Monitor patient"
+})
+
+MERGE (d)-[:HAS_INTERACTION]->(int1)
+
+MERGE (int1)-[:INTERACTS_WITH]->(pio)
+MERGE (int1)-[:INCREASES_RISK_OF]->(hf)
+
+///////////////////////////////////////////////////////////////////////////
+// MECHANISM OF ACTION
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (moa:Mechanism {
+    name:"Regulation of glucose metabolism"
+})
+
+MERGE (ig)-[:HAS_MECHANISM]->(moa)
+
+MERGE (muscle:Organ {name:"Skeletal muscle"})
+MERGE (fat:Organ {name:"Adipose tissue"})
+MERGE (liver:Organ {name:"Liver"})
+
+MERGE (moa)-[:STIMULATES]->(muscle)
+MERGE (moa)-[:STIMULATES]->(fat)
+MERGE (moa)-[:INHIBITS]->(liver)
+
+///////////////////////////////////////////////////////////////////////////
+// METABOLITES
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (m1:Metabolite {name:"M1"})
+MERGE (m2:Metabolite {name:"M2"})
+
+MERGE (ig)-[:METABOLIZED_TO]->(m1)
+MERGE (ig)-[:METABOLIZED_TO]->(m2)
+
+///////////////////////////////////////////////////////////////////////////
+// RECEPTORS
+///////////////////////////////////////////////////////////////////////////
+
+MERGE (ir:Protein {name:"Insulin receptor"})
+MERGE (igf:Protein {name:"IGF-1 receptor"})
+
+MERGE (ig)-[:BINDS_TO]->(ir)
+MERGE (ig)-[:BINDS_WEAKLY_TO]->(igf)
+
+///////////////////////////////////////////////////////////////////////////
+// STORAGE
+///////////////////////////////////////////////////////////////////////////
+
+CREATE (storage:StorageRecommendation {
+    temperature:"2-8 C",
+    protect_from:"Light",
+    freeze:false
+})
+
+MERGE (d)-[:HAS_STORAGE]->(storage)
+
+///////////////////////////////////////////////////////////////////////////
+// WARNINGS
+///////////////////////////////////////////////////////////////////////////
+
+CREATE (warn:Warning {
+    text:"Do not administer intravenously"
+})
+
+MERGE (d)-[:HAS_WARNING]->(warn)
+
+CREATE (warn2:Warning {
+    text:"Do not mix with other insulins"
+})
+
+MERGE (d)-[:HAS_WARNING]->(warn2)
+
+CREATE (warn3:Warning {
+    text:"Rotate injection sites"
+})
+
+MERGE (d)-[:HAS_WARNING]->(warn3)
+
