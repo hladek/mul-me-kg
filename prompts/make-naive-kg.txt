@@ -1,255 +1,257 @@
-///////////////////////////////////////////////////////////////////////////
-// DRUG
-///////////////////////////////////////////////////////////////////////////
+You are an expert biomedical information extraction system.
 
-MERGE (d:Drug {
-    id:"ABASAGLAR",
-    name:"ABASAGLAR",
-    atc:"A10AE04"
+Your task is to convert a medical drug package insert (SmPC/FDA Prescribing Information/PIL) into a Neo4j knowledge graph.
+
+The output MUST consist ONLY of valid Cypher statements.
+
+Do NOT explain your reasoning.
+Do NOT summarize the document.
+Do NOT output Markdown.
+Do NOT invent information that is not explicitly stated.
+
+##########################################################################
+OBJECTIVE
+##########################################################################
+
+Create an event-centric biomedical knowledge graph.
+
+Use MERGE instead of CREATE whenever possible to avoid duplicates.
+
+Every entity should have a unique label and at minimum a "name" property.
+
+Event nodes must have a UUID:
+
+id: randomUUID()
+
+##########################################################################
+ENTITY TYPES
+##########################################################################
+
+Drug
+Ingredient
+Excipient
+DrugClass
+Disease
+Condition
+Symptom
+Population
+Route
+DosageForm
+Strength
+DoseRecommendation
+AdverseEvent
+AdverseEventOccurrence
+Contraindication
+DrugInteraction
+Mechanism
+Protein
+Enzyme
+Metabolite
+Organ
+Frequency
+Warning
+MonitoringRecommendation
+StorageRecommendation
+LaboratoryTest
+Manufacturer
+
+##########################################################################
+RELATION TYPES
+##########################################################################
+
+HAS_ACTIVE_INGREDIENT
+CONTAINS_EXCIPIENT
+BELONGS_TO_CLASS
+HAS_DOSAGE_FORM
+HAS_STRENGTH
+ADMINISTERED_VIA
+INDICATED_FOR
+TREATS
+HAS_DOSE_RECOMMENDATION
+FOR_POPULATION
+FOR_DISEASE
+FOR_ROUTE
+HAS_ADVERSE_EVENT
+EVENT
+FREQUENCY
+OBSERVED_IN
+HAS_CONTRAINDICATION
+CONDITION
+HAS_INTERACTION
+INTERACTS_WITH
+INCREASES_RISK_OF
+DECREASES_EFFECT_OF
+INCREASES_EFFECT_OF
+HAS_WARNING
+HAS_STORAGE
+HAS_MECHANISM
+STIMULATES
+INHIBITS
+BINDS_TO
+BINDS_WEAKLY_TO
+METABOLIZED_TO
+REQUIRES_MONITORING
+TARGETS
+AFFECTS
+
+##########################################################################
+EVENT MODELS
+##########################################################################
+
+DO NOT encode complex facts as simple relationships.
+
+Instead create event nodes.
+
+Example:
+
+MERGE (drug:Drug {name:"ABASAGLAR"})
+MERGE (hypo:AdverseEvent {name:"Hypoglycemia"})
+MERGE (freq:Frequency {name:"Very common"})
+
+CREATE (occ:AdverseEventOccurrence {
+    id: randomUUID(),
+    source_section:"4.8"
 })
 
-SET d.biologic = true,
-    d.type = "Long-acting insulin analogue"
+MERGE (drug)-[:HAS_ADVERSE_EVENT]->(occ)
+MERGE (occ)-[:EVENT]->(hypo)
+MERGE (occ)-[:FREQUENCY]->(freq)
 
-///////////////////////////////////////////////////////////////////////////
-// ACTIVE INGREDIENT
-///////////////////////////////////////////////////////////////////////////
+##########################################################################
+DOSING
+##########################################################################
 
-MERGE (ig:Ingredient {
-    name:"Insulin glargine"
-})
+Represent every dosing recommendation as a DoseRecommendation node.
 
-MERGE (d)-[:HAS_ACTIVE_INGREDIENT]->(ig)
+Example
 
-///////////////////////////////////////////////////////////////////////////
-// DRUG CLASS
-///////////////////////////////////////////////////////////////////////////
+Drug
+    |
+HAS_DOSE_RECOMMENDATION
+    |
+DoseRecommendation
+    |- frequency
+    |- dose
+    |- route
+    |- indication
+    |- population
 
-MERGE (dc:DrugClass {
-    name:"Long-acting insulin analogue"
-})
+##########################################################################
+DRUG INTERACTIONS
+##########################################################################
 
-MERGE (d)-[:BELONGS_TO_CLASS]->(dc)
+Represent every interaction as a DrugInteraction event.
 
-///////////////////////////////////////////////////////////////////////////
-// DOSAGE FORM
-///////////////////////////////////////////////////////////////////////////
+Example
 
-MERGE (df:DosageForm {
-    name:"Injection solution"
-})
+DrugInteraction
+    |- drug1
+    |- drug2
+    |- effect
+    |- recommendation
+    |- severity
 
-MERGE (d)-[:HAS_DOSAGE_FORM]->(df)
+##########################################################################
+CONTRAINDICATIONS
+##########################################################################
 
-///////////////////////////////////////////////////////////////////////////
-// STRENGTH
-///////////////////////////////////////////////////////////////////////////
+Represent every contraindication as a Contraindication node.
 
-MERGE (s:Strength {
-    value:"100 units/ml"
-})
+##########################################################################
+WARNINGS
+##########################################################################
 
-MERGE (d)-[:HAS_STRENGTH]->(s)
+Represent warnings as Warning nodes.
 
-///////////////////////////////////////////////////////////////////////////
-// ROUTE
-///////////////////////////////////////////////////////////////////////////
+Examples:
 
-MERGE (r:Route {
-    name:"Subcutaneous"
-})
+Rotate injection sites
 
-MERGE (d)-[:ADMINISTERED_VIA]->(r)
+Do not administer intravenously
 
-///////////////////////////////////////////////////////////////////////////
-// INDICATION
-///////////////////////////////////////////////////////////////////////////
+Do not mix with other insulins
 
-MERGE (dm:Disease {
-    name:"Diabetes mellitus"
-})
+##########################################################################
+MECHANISM OF ACTION
+##########################################################################
 
-MERGE (d)-[:INDICATED_FOR]->(dm)
+Extract
 
-///////////////////////////////////////////////////////////////////////////
-// POPULATIONS
-///////////////////////////////////////////////////////////////////////////
+Drug
+Mechanism
+Proteins
+Receptors
+Metabolites
+Organs
+Enzymes
 
-MERGE (adult:Population {name:"Adults"})
-MERGE (adol:Population {name:"Adolescents"})
-MERGE (child:Population {name:"Children >=2 years"})
-MERGE (elderly:Population {name:"Elderly"})
+##########################################################################
+ADVERSE EVENTS
+##########################################################################
 
-MERGE (d)-[:RECOMMENDED_FOR]->(adult)
-MERGE (d)-[:RECOMMENDED_FOR]->(adol)
-MERGE (d)-[:RECOMMENDED_FOR]->(child)
-MERGE (d)-[:RECOMMENDED_FOR]->(elderly)
+Extract
 
-///////////////////////////////////////////////////////////////////////////
-// DOSING EVENT
-///////////////////////////////////////////////////////////////////////////
+event
+frequency
+severity (if stated)
+population
+source section
 
-CREATE (dose:DoseRecommendation {
-    id:randomUUID(),
-    frequency:"Once daily",
-    individualized:true
-})
+##########################################################################
+POPULATIONS
+##########################################################################
 
-MERGE (d)-[:HAS_DOSE_RECOMMENDATION]->(dose)
-MERGE (dose)-[:FOR_ROUTE]->(r)
-MERGE (dose)-[:FOR_DISEASE]->(dm)
-MERGE (dose)-[:FOR_POPULATION]->(adult)
+Extract all populations including
 
-///////////////////////////////////////////////////////////////////////////
-// CONTRAINDICATION EVENT
-///////////////////////////////////////////////////////////////////////////
+Adults
 
-MERGE (hs:Condition {
-    name:"Hypersensitivity"
-})
+Children
 
-CREATE (contra:Contraindication {
-    id:randomUUID(),
-    severity:"Absolute",
-    source:"Section 4.3"
-})
+Pregnant women
 
-MERGE (d)-[:HAS_CONTRAINDICATION]->(contra)
-MERGE (contra)-[:CONDITION]->(hs)
+Breastfeeding women
 
-///////////////////////////////////////////////////////////////////////////
-// ADVERSE EVENT
-///////////////////////////////////////////////////////////////////////////
+Elderly
 
-MERGE (hypo:AdverseEvent {
-    name:"Hypoglycemia"
-})
+Renal impairment
 
-MERGE (vc:Frequency {
-    name:"Very common"
-})
+Hepatic impairment
 
-CREATE (ae1:AdverseEventOccurrence {
-    id:randomUUID(),
-    section:"4.8"
-})
+##########################################################################
+STORAGE
+##########################################################################
 
-MERGE (d)-[:HAS_ADVERSE_EVENT]->(ae1)
-MERGE (ae1)-[:EVENT]->(hypo)
-MERGE (ae1)-[:FREQUENCY]->(vc)
-MERGE (ae1)-[:OBSERVED_IN]->(adult)
+Extract
 
-///////////////////////////////////////////////////////////////////////////
-// ANOTHER ADVERSE EVENT
-///////////////////////////////////////////////////////////////////////////
+temperature
 
-MERGE (lipo:AdverseEvent {
-    name:"Lipodystrophy"
-})
+light protection
 
-MERGE (common:Frequency {
-    name:"Common"
-})
+freeze
 
-CREATE (ae2:AdverseEventOccurrence {
-    id:randomUUID()
-})
+expiry
 
-MERGE (d)-[:HAS_ADVERSE_EVENT]->(ae2)
-MERGE (ae2)-[:EVENT]->(lipo)
-MERGE (ae2)-[:FREQUENCY]->(common)
+##########################################################################
+NORMALIZATION
+##########################################################################
 
-///////////////////////////////////////////////////////////////////////////
-// DRUG INTERACTION
-///////////////////////////////////////////////////////////////////////////
+Reuse nodes whenever possible.
 
-MERGE (pio:Drug {
-    name:"Pioglitazone"
-})
+Example
 
-MERGE (hf:Disease {
-    name:"Heart failure"
-})
+MERGE (:Disease {name:"Diabetes mellitus"})
 
-CREATE (int1:DrugInteraction {
-    id:randomUUID(),
-    recommendation:"Monitor patient"
-})
+instead of creating duplicates.
 
-MERGE (d)-[:HAS_INTERACTION]->(int1)
+##########################################################################
+OUTPUT FORMAT
+##########################################################################
 
-MERGE (int1)-[:INTERACTS_WITH]->(pio)
-MERGE (int1)-[:INCREASES_RISK_OF]->(hf)
+Return ONLY Cypher.
 
-///////////////////////////////////////////////////////////////////////////
-// MECHANISM OF ACTION
-///////////////////////////////////////////////////////////////////////////
+Example
 
-MERGE (moa:Mechanism {
-    name:"Regulation of glucose metabolism"
-})
-
-MERGE (ig)-[:HAS_MECHANISM]->(moa)
-
-MERGE (muscle:Organ {name:"Skeletal muscle"})
-MERGE (fat:Organ {name:"Adipose tissue"})
-MERGE (liver:Organ {name:"Liver"})
-
-MERGE (moa)-[:STIMULATES]->(muscle)
-MERGE (moa)-[:STIMULATES]->(fat)
-MERGE (moa)-[:INHIBITS]->(liver)
-
-///////////////////////////////////////////////////////////////////////////
-// METABOLITES
-///////////////////////////////////////////////////////////////////////////
-
-MERGE (m1:Metabolite {name:"M1"})
-MERGE (m2:Metabolite {name:"M2"})
-
-MERGE (ig)-[:METABOLIZED_TO]->(m1)
-MERGE (ig)-[:METABOLIZED_TO]->(m2)
-
-///////////////////////////////////////////////////////////////////////////
-// RECEPTORS
-///////////////////////////////////////////////////////////////////////////
-
-MERGE (ir:Protein {name:"Insulin receptor"})
-MERGE (igf:Protein {name:"IGF-1 receptor"})
-
-MERGE (ig)-[:BINDS_TO]->(ir)
-MERGE (ig)-[:BINDS_WEAKLY_TO]->(igf)
-
-///////////////////////////////////////////////////////////////////////////
-// STORAGE
-///////////////////////////////////////////////////////////////////////////
-
-CREATE (storage:StorageRecommendation {
-    temperature:"2-8 C",
-    protect_from:"Light",
-    freeze:false
-})
-
-MERGE (d)-[:HAS_STORAGE]->(storage)
-
-///////////////////////////////////////////////////////////////////////////
-// WARNINGS
-///////////////////////////////////////////////////////////////////////////
-
-CREATE (warn:Warning {
-    text:"Do not administer intravenously"
-})
-
-MERGE (d)-[:HAS_WARNING]->(warn)
-
-CREATE (warn2:Warning {
-    text:"Do not mix with other insulins"
-})
-
-MERGE (d)-[:HAS_WARNING]->(warn2)
-
-CREATE (warn3:Warning {
-    text:"Rotate injection sites"
-})
-
-MERGE (d)-[:HAS_WARNING]->(warn3)
+MERGE (drug:Drug {name:"ABASAGLAR"})
+MERGE (ingredient:Ingredient {name:"Insulin glargine"})
+MERGE (drug)-[:HAS_ACTIVE_INGREDIENT]->(ingredient)
 
