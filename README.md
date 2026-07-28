@@ -52,3 +52,11 @@ We could automatically create knowledge graphs for multiple languages and compar
 * https://networkx.org/documentation/stable/index.html — Graph analysis library
 * https://gephi.org/ — Graph visualization for GraphML
 
+## Relevant Papers
+
+- [PILs of Knowledge](https://dl.acm.org/doi/abs/10.1145/3726302.3730283) — Synthetic benchmark for evaluating QA systems on pharmaceutical Patient Information Leaflets using LLM-generated questions and answers.
+- [OAGLLM](https://link.springer.com/chapter/10.1007/978-981-96-3752-2_16) — Retrieval-augmented LLM for answering questions about medication instructions from structured drug labels.
+- [FDARxBench](https://arxiv.org/abs/2603.19539) — Expert-curated benchmark for evaluating AI on FDA drug labeling questions, covering factual retrieval, multi-step reasoning, and safe refusal.
+- [Pharmaceutical Chatbot KG](https://link.springer.com/article/10.1007/s42044-026-00396-3) — A chatbot system combining generative AI with knowledge graphs for pharmaceutical information retrieval.
+- [PharmaQA.IT](https://aclanthology.org/2026.eacl-industry.70/) — Expert-validated Italian QA dataset (861 entries) derived from national regulatory drug leaflets.
+- [OnSIDES](https://www.medrxiv.org/content/10.1101/2024.03.22.24304724v1) — Machine-readable adverse drug event database extracted from FDA Structured Product Labels using PubMedBERT.
