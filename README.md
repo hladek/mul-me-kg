@@ -54,9 +54,21 @@ We could automatically create knowledge graphs for multiple languages and compar
 
 ## Relevant Papers
 
+## RAG Evaluation
+
 - [PILs of Knowledge](https://dl.acm.org/doi/abs/10.1145/3726302.3730283) — Synthetic benchmark for evaluating QA systems on pharmaceutical Patient Information Leaflets using LLM-generated questions and answers.
 - [OAGLLM](https://link.springer.com/chapter/10.1007/978-981-96-3752-2_16) — Retrieval-augmented LLM for answering questions about medication instructions from structured drug labels.
 - [FDARxBench](https://arxiv.org/abs/2603.19539) — Expert-curated benchmark for evaluating AI on FDA drug labeling questions, covering factual retrieval, multi-step reasoning, and safe refusal.
 - [Pharmaceutical Chatbot KG](https://link.springer.com/article/10.1007/s42044-026-00396-3) — A chatbot system combining generative AI with knowledge graphs for pharmaceutical information retrieval.
 - [PharmaQA.IT](https://aclanthology.org/2026.eacl-industry.70/) — Expert-validated Italian QA dataset (861 entries) derived from national regulatory drug leaflets.
 - [OnSIDES](https://www.medrxiv.org/content/10.1101/2024.03.22.24304724v1) — Machine-readable adverse drug event database extracted from FDA Structured Product Labels using PubMedBERT.
+
+## Knowledge Graph Construction
+
+- [Personalized Knowledge Graphs for the Pharmaceutical Domain](https://link.springer.com/chapter/10.1007/978-3-030-30796-7_25) — Approaches to building individualized knowledge graphs in the pharmaceutical domain.
+- [SIDEKICK](https://link.springer.com/chapter/10.1007/978-3-032-25159-6_14) — A semantically integrated resource for drug effects, indications, and contraindications.
+- [MEDAKA](https://arxiv.org/abs/2509.26128) — An end-to-end pipeline that constructs biomedical knowledge graphs from unstructured drug leaflets using web scrapers and LLMs, capturing side effects, contraindications, and dosage guidelines.
+- [ODAE](https://link.springer.com/article/10.1186/s12859-019-2729-1) — An ontology-based framework for systematic representation of drug adverse events, mapping side effects across varying patient demographics and medical conditions.
+- [IEEE](https://ieeexplore.ieee.org/abstract/document/11216837?casa_token=PL5OItOBZAgAAAAA:Lm9AN76bhCDRbj0lmRcQwaIkYHNPfQdQ3xcLgqyF4E6YpbOD8EJ7Nq4l7BrSLbKN7Dm-ua9HpIYR) — Knowledge graph construction method.
+- [PharmGraph-Auditor](https://arxiv.org/abs/2603.10891) — A hybrid knowledge-grounded framework for safe prescription verification, combining iterative schema refinement with chain-of-verification reasoning over a unified graph and relational knowledge base.
+
