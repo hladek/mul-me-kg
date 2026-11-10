@@ -14,12 +14,11 @@ Advancing multilingual GraphRAG systems therefore requires new methods for multi
 
 We could automatically create knowledge graphs for multiple languages and compare the results across languages and, where possible, against existing knowledge graphs, such as **MedDRA**.
 
-1. Index existing multilingual data (drug package inserts) using a GraphRAG technique.
-2. Create an evaluation scenario that includes multiple languages, with questions, expected relevant documents, and expected answers.
-3. Analyze the automatically created knowledge graphs, compare them with one another and, where possible, with existing knowledge graphs. Evaluate both the quality of the knowledge graphs and the retrieval performance.
-4. Propose a method to improve multilingual knowledge graph creation and its use in retrieval.
-5. Evaluate the research hypotheses through experiments.
-6. Summarize the results and finalize the paper.
+1. Create an evaluation scenario that includes multiple languages, with questions, expected relevant documents, and expected answers.
+2. Analyze the automatically created knowledge graphs, compare them with one another and, where possible, with existing knowledge graphs. Evaluate both the quality of the knowledge graphs and the retrieval performance.
+3. Propose a method to improve multilingual knowledge graph creation and its use in retrieval.
+4. Evaluate the research hypotheses through experiments.
+5. Summarize the results and finalize the paper.
 
 ## Possible Research Questions
 
@@ -27,6 +26,17 @@ We could automatically create knowledge graphs for multiple languages and compar
 * **RQ2:** How can the extracted knowledge be aligned into a language-agnostic knowledge graph?
 * **RQ3:** How does the use of multilingual knowledge graphs affect retrieval quality and answer generation in GraphRAG?
 * **RQ4:** How does multilingual GraphRAG compare with English-centric GraphRAG in terms of accuracy, explainability, and user trust for low-resource languages?
+
+## Open Tasks
+
+* Add your language to the parallel corpus
+* Propose method for triplet extraction
+* Create/update code and prompts for triplet creation and automatically extract triplets.
+* Create parallel medical QA evaluation corpus - Create example medical questions and answers for your language
+* Evaluate and correct extacted knowledge triplets
+* Manually create some knowledge triplets.
+* Propose graph RAG method for Medical QA.
+* Evaluate medical QA 
 
 ## How You Can Help
 
