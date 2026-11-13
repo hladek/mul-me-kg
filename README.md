@@ -82,3 +82,114 @@ We could automatically create knowledge graphs for multiple languages and compar
 - [IEEE](https://ieeexplore.ieee.org/abstract/document/11216837?casa_token=PL5OItOBZAgAAAAA:Lm9AN76bhCDRbj0lmRcQwaIkYHNPfQdQ3xcLgqyF4E6YpbOD8EJ7Nq4l7BrSLbKN7Dm-ua9HpIYR) — Knowledge graph construction method.
 - [PharmGraph-Auditor](https://arxiv.org/abs/2603.10891) — A hybrid knowledge-grounded framework for safe prescription verification, combining iterative schema refinement with chain-of-verification reasoning over a unified graph and relational knowledge base.
 
+
+## Parse package inserts into sections
+
+`parse_package_inserts.py` splits the Slovak (`sk`) and English (`en`) texts into
+standard numbered SmPC sections (including subsections such as `4.1`), packaging
+label sections, and patient leaflet sections. It uses local rules, without an LLM
+or API credentials. The text parser itself uses only the Python standard library;
+loading Hugging Face or Arrow data additionally requires `datasets` from
+`requirements.txt`.
+
+Process a Hugging Face split (`train`, `test`, or `validation`):
+
+```bash
+.venv/bin/python parse_package_inserts.py \
+  --split train \
+  --output output/sections/pil_spc_train.sections.jsonl \
+  --report output/sections/train-report.json
+```
+
+Or process a local bilingual JSONL file (one object with `name`, `sk`, and `en`
+per line). Cached Hugging Face `.arrow` files are also accepted:
+
+```bash
+.venv/bin/python parse_package_inserts.py \
+  --input prepare-data/pil_spc_train.jsonl \
+  --output output/sections/pil_spc_train.sections.jsonl \
+  --report output/sections/train-report.json
+```
+
+Add `--limit 10` for a small sample. The remote dataset names its development
+split `validation`; the older local `prepare-data/split_data.py` names it `dev`.
+Pass that local file explicitly with `--input`.
+
+Each output record retains metadata such as `name`. Its `sk` and `en` values
+become objects with `language`, `template` (`human` or `veterinary`), `sections`,
+and `warnings`. Each section contains:
+
+- `kind`: `smpc`, `labelling`, `pil`, `annex_ii`, `annex_iv`, or `unknown`.
+- `document_index`: a one-based index within the kind, retaining repeated
+  documents for different strengths or formulations. Indices are local to each
+  language, and do not imply that the corresponding documents are aligned.
+- `number` and `parent_number`: the source section number and its parent
+  (`4.1` belongs to `4`); introductions and annex markers use `null`.
+- `title`: the original heading, with surrounding Markdown formatting stripped.
+- `start`, `heading_end`, `end`: character offsets into the original language
+  string, with exclusive end offsets.
+- `text`: the exact original slice, including its heading and source formatting.
+
+The sections partition the source without dropping or duplicating characters:
+`''.join(s['text'] for s in parsed['sections']) == original_text`.
+Parent sections contain their own text only, followed by separate subsection
+spans. Introduction and annex-marker spans retain unnumbered material. Unnumbered
+subheadings, tables, pictures, and annex conditions remain inside their containing
+span. Markdown and HTML/OCR headings are recognized, including headings joined
+onto one line. Leaflet contents lists stay in the introduction rather than
+becoming duplicate sections.
+
+Missing standard headings and repeated section numbers produce review warnings.
+These are structural checks, not an accuracy score: older leaflet templates,
+missing OCR text, unusual headings, and extraction duplicates need review.
+Unrecognized text is preserved in the containing span. Human inserts use the standard EMA heading
+titles. Veterinary inserts are detected separately and also use layout and
+capitalization rules to support their different section numbering, including
+`4.10`, `4.11`, and longer leaflets. For veterinary inserts, missing-section
+checks cover gaps in the observed main-section numbering; human inserts are
+checked against the standard template. Neither mode infers or translates missing
+content, or aligns sections across languages. Existing graph extraction inputs
+are unchanged; this output has a different schema.
+
+The parser can also be imported:
+
+```python
+from parse_package_inserts import parse_insert, parse_record
+
+parsed = parse_insert(slovak_text, "sk")
+leaflet_sections = [s for s in parsed["sections"]
+                    if s["kind"] == "pil" and s["number"]]
+bilingual = parse_record({"name": "example", "sk": slovak_text, "en": english_text})
+```
+
+Run regression checks with:
+
+```bash
+.venv/bin/python -m unittest discover -s tests -v
+```
+
+### Dataset inspection (2026-11-13)
+
+The cached dataset contains 1,834 bilingual records: 1,467 train, 183 test, and
+184 validation. The source columns are `name`, `sk`, and `en`; neither language
+has empty texts. Median source lengths are 94,888 characters in Slovak and
+93,233 in English. A single record can contain multiple SmPCs, labels, and
+leaflets, and the corpus includes veterinary products as well as human medicines.
+
+There are 91 repeated product-name values, of which 52 occur in more than one
+split. Names therefore cannot serve as unique document identifiers. Name overlap
+alone does not establish duplicate document content. The parser preserves record
+order and repeated names in JSONL.
+
+Parsed versions of all splits are generated locally in `output/sections/`,
+with file names `pil_spc_<split>.sections.jsonl`. The same directory contains
+`inspection.json` with corpus parsing statistics and warning examples, and
+`source-inspection.json` with source lengths and name-overlap details. Generated
+files are excluded from Git.
+
+The full corpus run verified exact text reconstruction for all 3,668 language
+texts. Twelve regression tests cover inline headings, HTML/OCR text, contents
+lists, repeated documents, veterinary numbering, Unicode offsets, references,
+and the JSONL command-line interface. Coverage warnings remain in the output
+for malformed, incomplete, duplicated, or unrecognized headings; lossless text
+preservation does not establish that every semantic section boundary is correct.
