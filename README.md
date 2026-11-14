@@ -193,3 +193,48 @@ lists, repeated documents, veterinary numbering, Unicode offsets, references,
 and the JSONL command-line interface. Coverage warnings remain in the output
 for malformed, incomplete, duplicated, or unrecognized headings; lossless text
 preservation does not establish that every semantic section boundary is correct.
+
+## Build a graph from parsed sections
+
+`build_pil_spc_graph.py` now calls `parse_package_inserts.parse_insert` on each
+raw language text before extraction. It sends one request per section containing
+body text, including introductions, labels, annex material, and unrecognized
+spans. Pure headings are skipped. Parser warnings are printed for review.
+No separate parser command is required, and the builder continues to read raw
+`sk`/`en` strings rather than the parser's standalone output schema.
+
+```bash
+.venv/bin/python build_pil_spc_graph.py --language sk --split train --limit 1
+.venv/bin/python build_pil_spc_graph.py --language en --split validation --limit 1
+```
+
+For local raw JSONL splits, add `--data-dir /path/to/splits`. The existing API
+settings (`AUTH_TOKEN`/`OPENAI_API_KEY`, `BASE_URL`/`OPENAI_BASE_URL`, and
+`MODEL_NAME` or `--model`) still apply. Each section is an independent model
+request, so a document can require many requests; `--limit` counts records.
+
+The extraction prompt accepts `[]` for sections with no extractable facts.
+Each validated section is appended immediately to the record’s JSONL file,
+so extracted knowledge remains available if a later section fails. Exact
+assertions already saved in that file are not appended again. After every
+section response validates, the saved triples are imported into CogDB. Each triple receives authoritative
+`source_document` and `source_section` values from the builder. A section ID such
+as `smpc:1:4.2@1234` identifies the document kind, repeated-document index, section
+number, and starting character offset. Dose, contraindication, and interaction
+node IDs receive a deterministic section suffix so sequences restarted in
+separate model calls cannot merge unrelated facts.
+
+Output files are named `<normalized-name>-<source-text-hash>.jsonl`, retaining
+records that share a product name. When a record has no explicit identifier,
+its document identifier also includes that hash. Older name-only output files
+are not used as completion markers. Completed hashed outputs are skipped unless
+`--overwrite` is supplied. Reprocessing appends newly extracted assertions and
+preserves saved knowledge. A `.jsonl.incomplete` sidecar marks a record while it
+is being processed and is removed after graph import succeeds. On failure, the
+partial JSONL and sidecar remain; retrying processes the sections again and
+deduplicates saved assertions before appending. Graph writes add
+assertions and do not remove previously imported facts.
+
+The integration tests mock the model and graph storage, checking section isolation,
+Slovak/English extraction, provenance, fact-node separation, empty results,
+duplicate product names, resume behavior, and failure handling without API calls.

@@ -11,7 +11,7 @@ The graph is intended to answer questions about:
 
 ## Input
 
-The input contains exactly one source document in one language. It may include a product name and document identifier as metadata. The source text may be divided into numbered or titled sections.
+The input contains one parsed section of a source document in one language, with a product name, document identifier, and source section identifier as metadata. Other sections are processed independently. Extract facts only from the supplied section; do not assume facts from unseen sections. Introductions and unnumbered source spans may also be supplied.
 
 Process only the supplied document. Do not use external knowledge, infer missing facts, or treat examples in this prompt as source evidence.
 
@@ -25,10 +25,11 @@ Return only JSONL. Each non-empty line must be one valid JSON object with exactl
 - `subject_type` and `object_type` identify the node types. Use `Literal` for values such as dose text, route, frequency, or recommendation text.
 - `source_document` is the supplied document identifier; if none is supplied, use the product name and `unknown-document`.
 - `language` is the source language code (`sk`, `en`, or the best-supported ISO 639-1 code).
-- `source_section` is the section number/title when present; otherwise use an empty string.
+- `source_section` is the supplied source section identifier, copied exactly. If no identifier is supplied, use the section number/title when present; otherwise use an empty string.
 - `evidence` is a short exact excerpt from the source in its original language. Keep it brief and preserve units, qualifiers, and negation.
 - Escape JSON strings correctly. Do not include comments, Markdown fences, explanations, or any text outside the JSONL records.
 - Do not emit duplicate records for the same fact and evidence. Emit no record for a requested category when the source does not state it.
+- If the section contains no extractable facts, return exactly `[]`. Do not return a blank response, invent facts, or add explanatory text.
 
 ## Graph representation
 
