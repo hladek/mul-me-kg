@@ -5,4 +5,5 @@ Description, appearance, and pharmaceutical_form normally appear in section 3.
 The marketing_authorisation_holder normally appears in section 7. It is not
 the manufacturer unless the text explicitly identifies it as such. Extract a
 manufacturer only if explicitly identified. Attach identity_evidence to each
-populated field. For veterinary SmPCs, follow the heading, not these numbers.
+populated field when excerpts are available; otherwise omit it or use null.
+For veterinary SmPCs, follow the heading, not these numbers.

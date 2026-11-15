@@ -28,7 +28,7 @@ class OntologyTests(unittest.TestCase):
 
     def test_required_statement_and_identity_fields(self):
         for cls, names in (
-            (ontology.Statement, ('evidence', 'summary')),
+            (ontology.Statement, ('summary',)),
             (ontology.Evidence, ('source_id', 'exact_text')),
             (ontology.Product, ('id', 'name')),
         ):
@@ -65,7 +65,7 @@ class OntologyTests(unittest.TestCase):
         text = 'Example source statement'
         evidence = ontology.Evidence(
             source_id='source', exact_text=text, section_id='smpc:1:4.2@0',
-            span_start=0, span_end=len(text),
+            span_start=0, span_end=len(text), is_exact=True,
         )
         population = ontology.Population(evidence=[evidence], summary=text, name='Source group')
         dose = ontology.DoseRecommendation(

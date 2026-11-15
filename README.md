@@ -239,16 +239,22 @@ select extraction guidance by meaning rather than human section numbering.
 Prompts live in `prompts/smpc-*.txt`; use `--prompt-dir` to choose another folder
 containing the same four filenames. Each section with body text gets a separate
 API request. The partial Product response schema is generated from `ontology.py`.
-The shared prompt requires source-language values and verbatim evidence;
-additional prompts guide identity, clinical, and other sections. The ontology
+The shared prompt requires source-language values and requests verbatim evidence
+when available; facts may be extracted without excerpts.
+Additional prompts guide identity, clinical, and other sections. The ontology
 does not cover every SmPC fact: unsupported information yields an empty result,
 and the source section remains in the output. Heading-only sections make no API
 call. Empty results do not establish that a clinical phenomenon is absent.
 
 After every section, the pipeline validates response types, checks each evidence
-excerpt against the exact section text, and assigns source IDs and character
-offsets in Python. This verifies source location, not whether an excerpt
-semantically supports every extracted attribute. For repeated identical excerpts,
+excerpt against the exact section text, and assigns source IDs in Python.
+Matching excerpts have `is_exact=true` and document-relative character offsets.
+Supplied unmatched excerpts retain their text with `is_exact=false` and null
+offsets. Missing, null, or blank excerpts are discarded; evidence lists with no
+remaining excerpts become null. Facts and identity values without evidence are
+retained. Available evidence is preserved when duplicate facts are merged.
+An exact match verifies source location, not whether an excerpt semantically
+supports every extracted attribute. For repeated identical excerpts,
 offsets identify the first match within the section.
 
 Local normalization applies Unicode NFC and whitespace cleanup to extracted
@@ -269,7 +275,7 @@ Each file contains:
 - `model`, `prompt_hashes`, and `run_fingerprint`: extraction configuration.
 - `template`, `parser_warnings`, and `normalization_warnings`: review context.
 - `sections`: original parser spans, status, selected guidance prompt, and
-  normalized `information` objects with verified evidence metadata.
+  normalized `information` objects with nullable evidence and matching metadata.
 - `product`: aggregated information matching the existing Product fields.
 - `identity_conflicts`: differing values for scalar identity fields. Conflicting
   optional fields are left null in the aggregate; all values and evidence remain
@@ -287,48 +293,3 @@ changed prompts, model, implementation, or input-source metadata require
 again. Failures retain checkpoints, report document/section context, and produce
 a nonzero exit status after remaining documents are attempted. No graph database
 is created or updated.
-
-## Build a graph from parsed sections
-
-`build_pil_spc_graph.py` now calls `parse_package_inserts.parse_insert` on each
-raw language text before extraction. It sends one request per section containing
-body text, including introductions, labels, annex material, and unrecognized
-spans. Pure headings are skipped. Parser warnings are printed for review.
-No separate parser command is required, and the builder continues to read raw
-`sk`/`en` strings rather than the parser's standalone output schema.
-
-```bash
-.venv/bin/python build_pil_spc_graph.py --language sk --split train --limit 1
-.venv/bin/python build_pil_spc_graph.py --language en --split validation --limit 1
-```
-
-For local raw JSONL splits, add `--data-dir /path/to/splits`. The existing API
-settings (`AUTH_TOKEN`/`OPENAI_API_KEY`, `BASE_URL`/`OPENAI_BASE_URL`, and
-`MODEL_NAME` or `--model`) still apply. Each section is an independent model
-request, so a document can require many requests; `--limit` counts records.
-
-The extraction prompt accepts `[]` for sections with no extractable facts.
-Each validated section is appended immediately to the record’s JSONL file,
-so extracted knowledge remains available if a later section fails. Exact
-assertions already saved in that file are not appended again. After every
-section response validates, the saved triples are imported into CogDB. Each triple receives authoritative
-`source_document` and `source_section` values from the builder. A section ID such
-as `smpc:1:4.2@1234` identifies the document kind, repeated-document index, section
-number, and starting character offset. Dose, contraindication, and interaction
-node IDs receive a deterministic section suffix so sequences restarted in
-separate model calls cannot merge unrelated facts.
-
-Output files are named `<normalized-name>-<source-text-hash>.jsonl`, retaining
-records that share a product name. When a record has no explicit identifier,
-its document identifier also includes that hash. Older name-only output files
-are not used as completion markers. Completed hashed outputs are skipped unless
-`--overwrite` is supplied. Reprocessing appends newly extracted assertions and
-preserves saved knowledge. A `.jsonl.incomplete` sidecar marks a record while it
-is being processed and is removed after graph import succeeds. On failure, the
-partial JSONL and sidecar remain; retrying processes the sections again and
-deduplicates saved assertions before appending. Graph writes add
-assertions and do not remove previously imported facts.
-
-The integration tests mock the model and graph storage, checking section isolation,
-Slovak/English extraction, provenance, fact-node separation, empty results,
-duplicate product names, resume behavior, and failure handling without API calls.

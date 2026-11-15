@@ -60,8 +60,11 @@ def response_schema(tp: Any) -> dict:
             key: response_schema(args[1]) for key in IDENTITY},
             'additionalProperties': False}
     if tp is ontology.Evidence:
-        return {'type': 'object', 'properties': {'exact_text': response_schema(str)},
-                'required': ['exact_text'], 'additionalProperties': False}
+        return {'anyOf': [
+            {'type': 'null'},
+            {'type': 'object', 'properties': {
+                'exact_text': {'anyOf': [{'type': 'string'}, {'type': 'null'}]}},
+             'required': [], 'additionalProperties': False}]}
     if is_dataclass(tp):
         attributes = [f for f in fields(tp) if not (tp is ontology.Product and f.name == 'id')]
         return {'type': 'object', 'properties': {
@@ -101,6 +104,10 @@ def merge_duplicates(items: list) -> list:
 
 def combine(left: Any, right: Any) -> Any:
     """Merge provenance recursively only for otherwise identical facts."""
+    if left is None:
+        return right
+    if right is None:
+        return left
     if isinstance(left, list):
         return merge_duplicates(left + right)
     if isinstance(left, dict):
@@ -132,28 +139,39 @@ def validate_value(value: Any, tp: Any, *, section: dict, metadata: dict,
     if origin is list:
         if not isinstance(value, list):
             raise ValueError(f'{path}: expected an array')
-        return [validate_value(v, args[0], section=section, metadata=metadata,
-                               path=f'{path}[{i}]') for i, v in enumerate(value)]
+        converted = [validate_value(v, args[0], section=section, metadata=metadata,
+                                    path=f'{path}[{i}]') for i, v in enumerate(value)]
+        if args[0] is ontology.Evidence:
+            return [v for v in converted if v is not None] or None
+        if args[0] is ontology.Population and any(v is None for v in converted):
+            return [v for v in converted if v is not None] or None
+        return converted
     if origin is dict:
         if not isinstance(value, dict) or set(value) - set(IDENTITY):
             raise ValueError(f'{path}: expected identity field evidence')
         return {k: validate_value(v, args[1], section=section, metadata=metadata,
                                    path=f'{path}.{k}') for k, v in value.items()}
     if tp is ontology.Evidence:
-        if not isinstance(value, dict) or set(value) != {'exact_text'}:
+        if value is None:
+            return None
+        if not isinstance(value, dict) or set(value) - {'exact_text'}:
             raise ValueError(f'{path}: evidence must contain only exact_text')
-        quote = value['exact_text']
-        if not isinstance(quote, str) or not quote.strip():
-            raise ValueError(f'{path}: evidence excerpt is empty')
+        quote = value.get('exact_text')
+        if quote is None:
+            return None
+        if not isinstance(quote, str):
+            raise ValueError(f'{path}: evidence excerpt must be a string')
+        if not quote.strip():
+            return None
         position = section['text'].find(quote)
-        if position < 0:
-            raise ValueError(f'{path}: evidence is not a verbatim section excerpt')
-        start = section['start'] + position
+        is_exact = position >= 0
+        start = section['start'] + position if is_exact else None
         return ontology.Evidence(
             source_id=metadata['source_id'], document_title=metadata['record_name'],
             section_title=section['title'], section_id=section['section_id'],
-            exact_text=quote, span_start=start, span_end=start + len(quote),
-            language=metadata['language'])
+            exact_text=quote, span_start=start,
+            span_end=start + len(quote) if is_exact else None,
+            language=metadata['language'], is_exact=is_exact)
     if is_dataclass(tp):
         if not isinstance(value, dict):
             raise ValueError(f'{path}: expected an object')
@@ -166,9 +184,12 @@ def validate_value(value: Any, tp: Any, *, section: dict, metadata: dict,
         try:
             instance = tp(**converted)
         except TypeError as exc:
+            missing = {f.name for f in fields(tp)
+                       if f.default is MISSING and f.default_factory is MISSING
+                       and f.name not in converted}
+            if tp is ontology.Population and missing == {'name'}:
+                return None
             raise ValueError(f'{path}: {exc}') from exc
-        if isinstance(instance, ontology.Statement) and not instance.evidence:
-            raise ValueError(f'{path}: each statement needs evidence')
         if isinstance(instance, (ontology.Indication, ontology.Contraindication)) and not instance.conditions:
             raise ValueError(f'{path}: conditions must not be empty')
         return instance
@@ -188,9 +209,6 @@ def validate_extraction(value: Any, section: dict, metadata: dict) -> dict:
                                    metadata=metadata, path=key)
         result[key] = converted
     evidence = result.get('identity_evidence', {})
-    for key in IDENTITY:
-        if result.get(key) and not evidence.get(key):
-            raise ValueError(f'{key}: populated identity field needs evidence')
     for key, excerpts in evidence.items():
         if excerpts and not result.get(key):
             raise ValueError(f'{key}: identity evidence has no corresponding value')
@@ -261,7 +279,8 @@ def aggregate(sections: list[dict], source_id: str) -> tuple[dict | None, dict, 
             if info.get(key) is not None:
                 candidates[key].append(info[key])
         for key, evidence in info.get('identity_evidence', {}).items():
-            merged['identity_evidence'].setdefault(key, []).extend(evidence)
+            previous = merged['identity_evidence'].get(key)
+            merged['identity_evidence'][key] = (previous or []) + (evidence or []) or None
     conflicts, warnings = {}, []
     for key, values in candidates.items():
         values = merge_duplicates(values)

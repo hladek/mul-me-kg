@@ -2,7 +2,7 @@
 
 Process each Summary of Product Characteristics (SmPC) in its source language.
 Use the numbered sections identified by ``parse_package_inserts.py`` to populate
-the classes below, attaching exact source evidence to every clinical statement.
+the classes below, attaching source excerpts when available.
 These classes cover selected product and clinical information, rather than every
 SmPC section, and do not themselves perform parsing or runtime validation.
 
@@ -47,14 +47,17 @@ class Evidence:
     span_end: int | None = None
     # Source language code, such as "sk" or "en", when known.
     language: str | None = None
+    # is true if exact text is present in the original section, false otherwise
+    is_exact: bool
 
 @dataclass(kw_only=True)
 class Statement:
     """Base for a clinical fact and the source excerpts supporting it."""
 
-    # Excerpts supporting the statement and its populated attributes;
-    # retain multiple excerpts when the fact spans source passages.
-    evidence: list[Evidence]
+    # Excerpts supporting the statement and its populated attributes, or None
+    # when no excerpt is available.
+    # Retain multiple excerpts when the fact spans source passages.
+    evidence: list[Evidence] | None = None
     # Concise source-language description preserving the original
     # meaning, including restrictions and conditional wording.
     summary: str
@@ -239,8 +242,8 @@ class Product:
     marketing_authorisation_holder: str | None = None
     # Evidence keyed by identity field name: name, manufacturer, substances,
     # description, pharmaceutical_form, or marketing_authorisation_holder.
-    # Each entry holds the excerpts supporting that field's extracted values.
-    identity_evidence: dict[str, list[Evidence]] = field(default_factory=dict)
+    # Each entry holds supporting excerpts, or None when unavailable.
+    identity_evidence: dict[str, list[Evidence] | None] = field(default_factory=dict)
     # Therapeutic indications from section 4.1.
     indications: list[Indication] = field(default_factory=list)
     # Explicit contraindications from section 4.3.

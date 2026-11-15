@@ -16,15 +16,17 @@ Missing optional details may be omitted or null. Empty collections mean no
 items were extracted, not confirmed absence of a clinical phenomenon.
 
 Every clinical statement, including nested populations and indications, needs
-a concise source-language summary and nonempty evidence. Each evidence object
-has exactly one field: exact_text, a verbatim contiguous excerpt copied from
+a concise source-language summary. Attach evidence when available; otherwise
+omit it or use null. Each evidence object has exactly one field: exact_text,
+a verbatim contiguous excerpt copied from
 the supplied source section, including its original formatting. Use multiple
 excerpts as needed to support all populated attributes. Do not supply source
 IDs or offsets; the pipeline assigns those.
 
-Every populated product identity field needs nonempty supporting excerpts in
-identity_evidence under that field's name. This includes name, manufacturer,
-substances, description, pharmaceutical_form, and marketing_authorisation_holder.
+Attach available supporting excerpts in identity_evidence under each populated
+product identity field's name; omit the entry or use null if unavailable.
+This includes name, manufacturer, substances, description, pharmaceutical_form,
+and marketing_authorisation_holder.
 Do not invent an identity field merely to make a complete Product object. This
 response is a partial Product; id is assigned by the pipeline.
 
