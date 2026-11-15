@@ -55,10 +55,19 @@ class EvidenceValidationTests(unittest.TestCase):
         self.assertEqual(len(result['warnings']), 2)
 
     def test_malformed_evidence_is_still_rejected(self):
-        for value in ({'exact_text': 42},
-                      {'exact_text': 'Excerpt', 'is_exact': False}, []):
+        for value in ({'exact_text': 42}, []):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 self.validate_evidence(value)
+
+    def test_unexpected_evidence_fields_are_ignored(self):
+        evidence = self.validate_evidence({
+            'exact_text': 'Exact source excerpt.',
+            'is_exact': False,
+            'source_id': 'unexpected source',
+        })
+        self.assertTrue(evidence.is_exact)
+        self.assertEqual(evidence.source_id, 'source')
+        self.assertIsNone(self.validate_evidence({'unexpected': 'value'}))
 
     def test_response_schema_only_requests_exact_text(self):
         schema = response_schema(ontology.Evidence)

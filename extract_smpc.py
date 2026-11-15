@@ -154,8 +154,8 @@ def validate_value(value: Any, tp: Any, *, section: dict, metadata: dict,
     if tp is ontology.Evidence:
         if value is None:
             return None
-        if not isinstance(value, dict) or set(value) - {'exact_text'}:
-            raise ValueError(f'{path}: evidence must contain only exact_text')
+        if not isinstance(value, dict):
+            raise ValueError(f'{path}: evidence must be an object')
         quote = value.get('exact_text')
         if quote is None:
             return None
