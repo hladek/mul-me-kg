@@ -14,10 +14,14 @@ class Statement:
     summary: str
 
 @dataclass
+class Pupulation(Statement):
+    name: str
+
+@dataclass
 class Indication(Statement):
     condition: [str]
     applicability: [str]
-    pupulation: [str]
+    pupulation: [Population]
 
 @dataclass
 class DoseRecommandation(Statement):
@@ -30,6 +34,13 @@ class DoseRecommandation(Statement):
 
 @dataclass
 class AdverseReaction(Statement):
+    event: str
+    frequency: str
+    severity: str
+    population: list[Poulation]
+
+@dataclass
+class Warning(Statement):
     pass
 
 @dataclass
@@ -43,4 +54,4 @@ class Product:
     contraindications: list[Indication]
     interactions: list[Statement]
     dosage: list[DoseRecommendation]
-    warnings: list[Statement]
+    warnings: list[Warning]
