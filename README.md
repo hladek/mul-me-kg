@@ -194,6 +194,100 @@ and the JSONL command-line interface. Coverage warnings remain in the output
 for malformed, incomplete, duplicated, or unrecognized headings; lossless text
 preservation does not establish that every semantic section boundary is correct.
 
+## Extract information from SmPCs only
+
+`extract_smpc.py` extracts the product identity and clinical statements defined
+in `ontology.py` using the OpenAI SDK. It has no CogDB dependency and does not
+import the graph builder. Install `openai`, `python-dotenv`, and `datasets`
+(the last is needed only for Hugging Face or Arrow input).
+
+Configure `OPENAI_API_KEY` and `MODEL_NAME` in the environment or `.env`.
+`AUTH_TOKEN` and `BASE_URL` are also supported for compatibility with existing
+configuration; they take precedence over `OPENAI_API_KEY` and
+`OPENAI_BASE_URL`, respectively. `--model` overrides `MODEL_NAME`.
+
+Process a small sample from a raw bilingual JSONL file:
+
+```bash
+.venv/bin/python extract_smpc.py \
+  --input prepare-data/pil_spc_train.jsonl \
+  --language sk --split train --limit 1
+```
+
+Or load a Hugging Face split:
+
+```bash
+.venv/bin/python extract_smpc.py \
+  --language en --split validation --limit 1
+```
+
+`--data-dir prepare-data --split dev` selects the local
+`pil_spc_dev.jsonl` file; remote `dev` selects `validation`.
+Inputs contain raw `sk`/`en` text, not the previously generated section objects.
+`--limit` counts input records, which may each contain multiple SmPCs.
+
+The new `parse_package_inserts.parse_smpc(text, language)` entry point returns
+only SmPC spans with offsets into the original language text. It reuses the
+rule-based heading recognizer but skips leaflet and labelling section parsing.
+Annex/leaflet/labelling markers terminate SmPC spans; an unmarked leaflet's
+section 1 also acts as a boundary. Unknown leading text and other document kinds
+are excluded. Inputs without recognizable numbered SmPC sections are skipped
+with a warning. Missing or malformed source boundary markers may still require
+manual review. Repeated SmPCs are processed separately, and veterinary headings
+select extraction guidance by meaning rather than human section numbering.
+
+Prompts live in `prompts/smpc-*.txt`; use `--prompt-dir` to choose another folder
+containing the same four filenames. Each section with body text gets a separate
+API request. The partial Product response schema is generated from `ontology.py`.
+The shared prompt requires source-language values and verbatim evidence;
+additional prompts guide identity, clinical, and other sections. The ontology
+does not cover every SmPC fact: unsupported information yields an empty result,
+and the source section remains in the output. Heading-only sections make no API
+call. Empty results do not establish that a clinical phenomenon is absent.
+
+After every section, the pipeline validates response types, checks each evidence
+excerpt against the exact section text, and assigns source IDs and character
+offsets in Python. This verifies source location, not whether an excerpt
+semantically supports every extracted attribute. For repeated identical excerpts,
+offsets identify the first match within the section.
+
+Local normalization applies Unicode NFC and whitespace cleanup to extracted
+values while preserving exact evidence text. It removes identical entries and
+combines evidence for otherwise identical statements, including nested
+populations. After each document, it repeats normalization across sections.
+It preserves case, synonyms, languages, doses, units, conditions, and differing
+clinical statements; it performs no translation, synonym linking, or external
+terminology lookup. Each section's normalized information is printed to stdout.
+
+By default, files are written to `output/smpc/<language>/<split>/`. There is one
+UTF-8 `.json` file per SmPC, with a name derived from the record name, record
+identity/content hash, and SmPC index. Use `--output-dir` to change the root.
+Each file contains:
+
+- `metadata`: record identity, language, input source, source hash, SmPC index,
+  and offsets into the original language text.
+- `model`, `prompt_hashes`, and `run_fingerprint`: extraction configuration.
+- `template`, `parser_warnings`, and `normalization_warnings`: review context.
+- `sections`: original parser spans, status, selected guidance prompt, and
+  normalized `information` objects with verified evidence metadata.
+- `product`: aggregated information matching the existing Product fields.
+- `identity_conflicts`: differing values for scalar identity fields. Conflicting
+  optional fields are left null in the aggregate; all values and evidence remain
+  available in section results.
+
+If no unambiguous, source-supported product name is available, `product` is
+null and `partial_product` retains the aggregated information. The record name
+is never silently substituted for a missing extracted product name.
+
+Successful sections are saved atomically to `.json.incomplete` checkpoints.
+Rerunning resumes matching checkpoints and prints their section results again.
+Completed documents are skipped. Changed inputs produce distinct identities;
+changed prompts, model, implementation, or input-source metadata require
+`--overwrite` for an existing output/checkpoint. Overwrite starts that document
+again. Failures retain checkpoints, report document/section context, and produce
+a nonzero exit status after remaining documents are attempted. No graph database
+is created or updated.
+
 ## Build a graph from parsed sections
 
 `build_pil_spc_graph.py` now calls `parse_package_inserts.parse_insert` on each

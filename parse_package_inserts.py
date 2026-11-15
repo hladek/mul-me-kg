@@ -144,11 +144,14 @@ def variable_title_end(text: str, start: int, minimum: int) -> int:
     return minimum + boundary.start() if boundary else minimum
 
 
-def parse_insert(text: str, language: str) -> dict:
+def parse_insert(text: str, language: str, *, smpc_only: bool = False) -> dict:
     """Return contiguous source spans, numbered sections, and review warnings.
 
-    Spans form an exact partition: ''.join(s['text'] for s in sections) == text.
+    By default spans form an exact partition:
+    ''.join(s['text'] for s in sections) == text.
     document_index counts repeated SmPCs/leaflets/labels, independently per kind.
+    smpc_only skips leaflet/label section parsing, retaining boundary markers
+    internally so their content cannot become part of an SmPC source span.
     Numbered parent sections contain only their own text, avoiding duplication.
     """
     if language not in RULES:
@@ -180,6 +183,16 @@ def parse_insert(text: str, language: str) -> dict:
                 events.append(dict(start=heading_start(text, start), heading_end=end,
                                    kind='veterinary', number=number, marker=False))
         for kind, regex in RULES[language].get(number, []):
+            if smpc_only and kind != 'smpc':
+                # An unmarked leaflet can still terminate an SmPC. Recognize
+                # its first heading only as a boundary, without sectioning it.
+                if kind == 'pil' and number == '1':
+                    match = regex.match(clean, candidate.end())
+                    if match and is_layout_start(text, offsets[candidate.start()]):
+                        events.append(dict(start=heading_start(text, offsets[candidate.start()]),
+                                           heading_end=offsets[match.end()-1]+1,
+                                           kind='pil', number=None, marker=True))
+                continue
             match = regex.match(clean, candidate.end())
             if not match:
                 continue
@@ -210,7 +223,7 @@ def parse_insert(text: str, language: str) -> dict:
     # Explicit contents markers also cover inline lists and OCR lists missing 1.
     toc_pattern = (r"what\s+is\s+in\s+this\s+leaflet|in\s+this\s+leaflet"
                    if language == 'en' else r"v\s+tejto\s+pisomnej\s+informacii\s+sa\s+dozviete")
-    for match in re.finditer(toc_pattern, clean):
+    for match in (() if smpc_only else re.finditer(toc_pattern, clean)):
         start = offsets[match.start()]
         if not is_layout_start(text, start):
             continue
@@ -232,6 +245,8 @@ def parse_insert(text: str, language: str) -> dict:
     context = 'unknown'
     for event in events:
         if event['kind'] == 'veterinary':
+            if smpc_only and context not in {'unknown', 'smpc'}:
+                continue
             if context in {'annex_ii', 'annex_iv'}:
                 continue
             event['kind'] = 'smpc' if context == 'unknown' else context
@@ -259,7 +274,7 @@ def parse_insert(text: str, language: str) -> dict:
     for i, section in enumerate(sections):
         kind = section['kind']
         new_kind = kind != previous_kind
-        new_title = (kind == 'pil' and section['number'] is None
+        new_title = ((kind == 'pil' or (smpc_only and kind == 'smpc')) and section['number'] is None
                      and numbered_in_document)
         if new_kind or new_title or (section['number'] == '1' and numbered_in_document):
             indices[kind] += 1
@@ -275,6 +290,8 @@ def parse_insert(text: str, language: str) -> dict:
         section['text'] = text[section['start']:end]
         section['parent_number'] = section['number'].split('.')[0] if section['number'] and '.' in section['number'] else None
         del section['marker']
+    if smpc_only:
+        sections = [s for s in sections if s['kind'] == 'smpc']
     warnings = []
     if not text.strip():
         warnings.append('empty_text')
@@ -297,6 +314,16 @@ def parse_insert(text: str, language: str) -> dict:
             warnings.append(f'{kind}:{index}:repeated_sections:{",".join(duplicates)}')
     return {'language': language, 'template': 'veterinary' if veterinary else 'human',
             'sections': sections, 'warnings': warnings}
+
+
+def parse_smpc(text: str, language: str) -> dict:
+    """Return only SmPC spans, with offsets into the complete original text.
+
+    Excluded annexes, labels, leaflets and unknown introductions are not
+    returned. Unlike parse_insert's default output, this is not a partition
+    of the input. No PIL or labelling sections are parsed.
+    """
+    return parse_insert(text, language, smpc_only=True)
 
 
 def parse_record(record: dict) -> dict:

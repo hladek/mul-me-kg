@@ -1,0 +1,21 @@
+Extract the clinical information actually present in this section:
+- Therapeutic indications -> indications, with conditions, applicability,
+  and eligible populations. Keep prevention and treatment settings distinct.
+- Posology, dosage, administration -> dosage. Separate regimens by population,
+  indication, route, and treatment phase. Retain adjustment thresholds,
+  missed-dose instructions, preparation, and administration instructions.
+- Explicit contraindications -> contraindications. Do not promote precautions
+  into prohibitions. Retain hypersensitivity and concomitant-treatment details.
+- Warnings and precautions -> warnings. Preserve conditions, applicability,
+  populations, risk, recommendations, and monitoring when stated.
+- Interactions -> interactions. Preserve named partners/classes, direction,
+  affected substances or parameters, effects, consequences, and management.
+- Fertility, pregnancy, lactation, driving, and machine use -> warnings when
+  explicit precautions or risks are stated.
+- Undesirable effects/adverse reactions -> adverse_reactions. Extract individual
+  events with stated frequencies and populations, preserving table associations.
+  Do not confuse frequency with severity or clinical seriousness. Preserve
+  uncertain causal associations in the summary.
+Nested Population and Indication instances also need summary and evidence.
+Use null for absent optional attributes. Do not infer unstated associations.
+In veterinary texts, follow headings and preserve the stated target species.

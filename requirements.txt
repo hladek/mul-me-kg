@@ -1,0 +1,4 @@
+cogdb
+datasets
+openai
+python-dotenv

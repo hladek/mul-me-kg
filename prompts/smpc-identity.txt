@@ -1,0 +1,8 @@
+Extract only explicitly stated product identity. The medicinal product name
+normally appears in section 1; keep its stated strength and pharmaceutical form.
+Active substances normally appear in section 2; do not include excipients.
+Description, appearance, and pharmaceutical_form normally appear in section 3.
+The marketing_authorisation_holder normally appears in section 7. It is not
+the manufacturer unless the text explicitly identifies it as such. Extract a
+manufacturer only if explicitly identified. Attach identity_evidence to each
+populated field. For veterinary SmPCs, follow the heading, not these numbers.
