@@ -249,6 +249,31 @@ information yields an empty result,
 and the source section remains in the output. Heading-only sections make no API
 call. Empty results do not establish that a clinical phenomenon is absent.
 
+## Manually annotate SmPCs
+
+Launch the local Streamlit interface from the repository root:
+
+```bash
+.venv/bin/pip install -r requirements.txt
+.venv/bin/streamlit run annotate_smpc.py
+```
+
+Choose a dataset split and language, then select a product record and one of its
+detected SmPC documents. Product names can repeat; the record index and document
+index distinguish those choices. The app shows each original numbered section
+and provides forms for the ontology fields associated with that section. Other
+sections can be marked reviewed without assigning them to an unrelated field.
+
+Enter evidence as an exact excerpt copied from the section. The app records the
+source ID, section metadata, language, and document-relative offsets when the
+excerpt is found; repeated matches can be selected by occurrence. An unmatched
+excerpt is retained with `is_exact` set to false and null offsets. Section
+progress is saved as a resumable draft under `output/manual-annotations/`.
+**Export Product JSON** writes a standalone `ontology.Product` JSON file in the
+same language/split directory. The interface does not call an LLM or other
+extraction API. The first dataset load may download the selected split into the
+Hugging Face cache.
+
 After every section, the pipeline validates response types, checks each evidence
 excerpt against the exact section text, and assigns source IDs in Python.
 Matching excerpts have `is_exact=true` and document-relative character offsets.
