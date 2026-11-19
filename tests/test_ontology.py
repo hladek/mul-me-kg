@@ -15,6 +15,8 @@ class OntologyTests(unittest.TestCase):
             ontology.Indication, ontology.Contraindication,
             ontology.DoseRecommendation, ontology.AdverseReaction,
             ontology.Warning, ontology.Interaction, ontology.Product,
+            ontology.Overdose, ontology.Pharmacodynamics,
+            ontology.Pharmacokinetics, ontology.PreclinicalSafety,
         )
         for cls in classes:
             with self.subTest(cls=cls.__name__):
@@ -80,12 +82,24 @@ class OntologyTests(unittest.TestCase):
             id='product', name='Source product', pharmaceutical_form='Source form',
             manufacturer='Manufacturer', marketing_authorisation_holder='Holder',
             identity_evidence={'name': [evidence]}, dosage=[dose], adverse_reactions=[reaction],
+            overdose=[ontology.Overdose(evidence=[evidence], summary=text,
+                                        management='Supportive care')],
+            pharmacodynamics=[ontology.Pharmacodynamics(
+                evidence=[evidence], summary=text, mechanism_of_action='Source mechanism')],
+            pharmacokinetics=[ontology.Pharmacokinetics(
+                evidence=[evidence], summary=text, absorption='Source absorption')],
+            preclinical_safety=[ontology.PreclinicalSafety(
+                evidence=[evidence], summary=text, findings=['Source finding'])],
         )
         data = json.loads(json.dumps(asdict(product)))
         self.assertEqual(data['dosage'][0]['populations'][0]['name'], 'Source group')
         self.assertEqual(data['dosage'][0]['adjustment'], 'Source adjustment')
         self.assertEqual(data['dosage'][0]['administration_instructions'], 'Source instruction')
         self.assertEqual(data['adverse_reactions'][0]['frequency'], 'not known')
+        self.assertEqual(data['overdose'][0]['management'], 'Supportive care')
+        self.assertEqual(data['pharmacodynamics'][0]['mechanism_of_action'], 'Source mechanism')
+        self.assertEqual(data['pharmacokinetics'][0]['absorption'], 'Source absorption')
+        self.assertEqual(data['preclinical_safety'][0]['findings'], ['Source finding'])
         self.assertIsNone(data['adverse_reactions'][0]['severity'])
         self.assertEqual(data['identity_evidence']['name'][0]['section_id'], 'smpc:1:4.2@0')
         self.assertNotEqual(data['manufacturer'], data['marketing_authorisation_holder'])

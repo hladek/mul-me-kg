@@ -208,6 +208,64 @@ class Interaction(Statement):
     direction: str | None = None
 
 @dataclass(kw_only=True)
+class Overdose(Statement):
+    """Overdose findings and management from SmPC section 4.9."""
+
+    # Reported signs, symptoms, or other consequences of overdose.
+    manifestations: list[str] | None = None
+    # Stated treatment, monitoring, or other management; do not add advice.
+    management: str | None = None
+    # Information about reported overdose cases, when provided.
+    reported_cases: str | None = None
+
+@dataclass(kw_only=True)
+class Pharmacodynamics(Statement):
+    """Pharmacodynamic information from SmPC section 5.1."""
+
+    # Stated therapeutic subgroup or pharmacotherapeutic classification.
+    pharmacotherapeutic_group: str | None = None
+    # Explicitly described target or process through which the substance acts.
+    mechanism_of_action: str | None = None
+    # Pharmacodynamic actions or effects stated in the source.
+    pharmacodynamic_effects: list[str] | None = None
+    # Source findings on clinical efficacy and safety.
+    clinical_efficacy_and_safety: str | None = None
+
+@dataclass(kw_only=True)
+class Pharmacokinetics(Statement):
+    """Pharmacokinetic information from SmPC section 5.2."""
+
+    # Stated uptake, bioavailability, or factors affecting absorption.
+    absorption: str | None = None
+    # Stated distribution, including volume or protein binding if supplied.
+    distribution: str | None = None
+    # Stated metabolic pathways or metabolites.
+    metabolism: str | None = None
+    # Stated routes or rates of excretion and elimination half-life.
+    elimination: str | None = None
+    # Other source-supported pharmacokinetic properties not captured above.
+    pharmacokinetic_properties: list[str] | None = None
+    # Pharmacokinetic differences or findings for explicitly named groups.
+    special_populations: list[str] | None = None
+
+@dataclass(kw_only=True)
+class PreclinicalSafety(Statement):
+    """Preclinical safety findings from SmPC section 5.3."""
+
+    # Concise source-supported preclinical findings, preserving caveats.
+    findings: list[str] | None = None
+    # Findings from safety pharmacology studies.
+    safety_pharmacology: str | None = None
+    # Other stated toxicology findings not captured by a specific field.
+    toxicology: str | None = None
+    # Findings on genotoxic potential.
+    genotoxicity: str | None = None
+    # Findings on carcinogenic potential.
+    carcinogenicity: str | None = None
+    # Findings on reproductive or developmental toxicity.
+    reproductive_and_developmental_toxicity: str | None = None
+
+@dataclass(kw_only=True)
 class Product:
     """Product identity and clinical statements collected from one SmPC.
 
@@ -258,3 +316,11 @@ class Product:
     # Undesirable effects from section 4.8, with stated frequency, severity,
     # and affected patient groups retained in each reaction.
     adverse_reactions: list[AdverseReaction] = field(default_factory=list)
+    # Overdose information from section 4.9.
+    overdose: list[Overdose] = field(default_factory=list)
+    # Pharmacodynamic information from section 5.1.
+    pharmacodynamics: list[Pharmacodynamics] = field(default_factory=list)
+    # Pharmacokinetic information from section 5.2.
+    pharmacokinetics: list[Pharmacokinetics] = field(default_factory=list)
+    # Preclinical safety information from section 5.3.
+    preclinical_safety: list[PreclinicalSafety] = field(default_factory=list)

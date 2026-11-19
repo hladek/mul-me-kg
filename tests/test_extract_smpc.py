@@ -1,7 +1,8 @@
 import unittest
 
 import ontology
-from extract_smpc import aggregate, response_schema, validate_extraction, validate_value
+from extract_smpc import (aggregate, response_schema, section_guidance,
+                          validate_extraction, validate_value)
 
 
 class EvidenceValidationTests(unittest.TestCase):
@@ -78,6 +79,36 @@ class EvidenceValidationTests(unittest.TestCase):
         statement = response_schema(ontology.Warning)
         self.assertNotIn('evidence', statement['required'])
         self.assertIn({'type': 'null'}, statement['properties']['evidence']['anyOf'])
+
+    def test_new_clinical_records_validate_and_aggregate(self):
+        info = validate_extraction({
+            'name': 'Product',
+            'overdose': [{'summary': 'Reported effects', 'manifestations': ['Nausea'],
+                          'evidence': [{'exact_text': 'Exact source excerpt.'}]}],
+            'pharmacodynamics': [{'summary': 'Mechanism',
+                                  'mechanism_of_action': 'Source mechanism'}],
+            'pharmacokinetics': [{'summary': 'Absorption', 'absorption': 'Rapid'}],
+            'preclinical_safety': [{'summary': 'Findings', 'findings': ['No findings']}],
+        }, self.section, self.metadata)
+        product, _, _, _ = aggregate([{'information': info}], 'source')
+        self.assertEqual(product['overdose'][0]['manifestations'], ['Nausea'])
+        self.assertTrue(product['overdose'][0]['evidence'][0]['is_exact'])
+        self.assertEqual(product['pharmacodynamics'][0]['mechanism_of_action'], 'Source mechanism')
+        self.assertEqual(product['pharmacokinetics'][0]['absorption'], 'Rapid')
+        self.assertEqual(product['preclinical_safety'][0]['findings'], ['No findings'])
+        self.assertEqual(response_schema(ontology.Product)['properties']['overdose']['type'], 'array')
+
+    def test_clinical_section_guidance_includes_new_sections(self):
+        for section, title, template in (
+            ('4.9', 'Overdose', 'human'),
+            ('5.1', 'Pharmacodynamic properties', 'human'),
+            ('5.2', 'Pharmacokinetic properties', 'human'),
+            ('5.3', 'Preclinical safety data', 'human'),
+            ('3.2', 'Toxicological properties', 'veterinary'),
+        ):
+            with self.subTest(section=section, title=title):
+                self.assertEqual(section_guidance({'number': section, 'title': title}, template),
+                                 'smpc-clinical.txt')
 
     def test_unavailable_excerpts_become_none(self):
         for value in (None, {}, {'exact_text': None}, {'exact_text': ''},

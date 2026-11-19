@@ -16,6 +16,16 @@ Extract the clinical information actually present in this section:
   events with stated frequencies and populations, preserving table associations.
   Do not confuse frequency with severity or clinical seriousness. Preserve
   uncertain causal associations in the summary.
+- Overdose -> overdose. Preserve reported manifestations, management or
+  treatment, and information about reported cases when stated.
+- Pharmacodynamic properties -> pharmacodynamics. Preserve the stated
+  pharmacotherapeutic group, mechanism of action, effects, and efficacy/safety
+  findings.
+- Pharmacokinetic properties -> pharmacokinetics. Preserve absorption,
+  distribution, metabolism, elimination, and properties in special populations.
+- Preclinical safety data -> preclinical_safety. Preserve findings and any
+  stated safety pharmacology, toxicology, genotoxicity, carcinogenicity, or
+  reproductive/developmental toxicity details.
 Nested Population and Indication instances also need a summary. Attach evidence
 when available; otherwise omit it or use null.
 Use null for absent optional attributes. Do not infer unstated associations.

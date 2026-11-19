@@ -1,7 +1,6 @@
 This section may be outside the current ontology's coverage. Return {} for
-information such as excipients, packaging, storage, shelf life, pharmacokinetic
-parameters, preclinical results, authorisation numbers/dates, dosimetry, or
-overdose management when no suitable ontology field exists. Do not represent
+information such as excipients, packaging, storage, shelf life, authorisation
+numbers/dates, or dosimetry when no suitable ontology field exists. Do not represent
 those facts as dosage, indications, or warnings merely to retain them.
 If the section explicitly contains product identity or one of the clinical
 statement categories supported by the schema, extract only that supported

@@ -241,8 +241,11 @@ containing the same four filenames. Each section with body text gets a separate
 API request. The partial Product response schema is generated from `ontology.py`.
 The shared prompt requires source-language values and requests verbatim evidence
 when available; facts may be extracted without excerpts.
-Additional prompts guide identity, clinical, and other sections. The ontology
-does not cover every SmPC fact: unsupported information yields an empty result,
+Additional prompts guide identity, clinical, and other sections. Clinical
+coverage includes overdose (4.9), pharmacodynamics (5.1), pharmacokinetics
+(5.2), and preclinical safety (5.3), alongside the clinical particulars
+described above. The ontology does not cover every SmPC fact: unsupported
+information yields an empty result,
 and the source section remains in the output. Heading-only sections make no API
 call. Empty results do not establish that a clinical phenomenon is absent.
 

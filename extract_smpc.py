@@ -24,7 +24,8 @@ PROMPTS = ('smpc-extract.txt', 'smpc-identity.txt', 'smpc-clinical.txt', 'smpc-o
 IDENTITY = ('name', 'manufacturer', 'substances', 'description',
             'pharmaceutical_form', 'marketing_authorisation_holder')
 COLLECTIONS = ('substances', 'indications', 'contraindications', 'interactions',
-               'dosage', 'warnings', 'adverse_reactions')
+               'dosage', 'warnings', 'adverse_reactions', 'overdose',
+               'pharmacodynamics', 'pharmacokinetics', 'preclinical_safety')
 VERSION = 1
 
 
@@ -229,7 +230,7 @@ def section_guidance(section: dict, template: str) -> str:
     if template == 'human':
         if section['number'] in {'1', '2', '3', '7'}:
             return 'smpc-identity.txt'
-        if section['number'] in {f'4.{i}' for i in range(1, 9)}:
+        if section['number'] in {f'4.{i}' for i in range(1, 10)} | {'5.1', '5.2', '5.3'}:
             return 'smpc-clinical.txt'
         return 'smpc-other.txt'
     # Veterinary templates use different numbering. Match meaning instead.
@@ -239,7 +240,8 @@ def section_guidance(section: dict, template: str) -> str:
     if re.search(r'indication|indikaci|posology|dosage|davkov|administration|podav|'
                  r'contraindication|kontraindik|warning|upozornen|precaution|opatren|'
                  r'interaction|interakci|pregnan|gravid|lactat|laktaci|fertil|'
-                 r'driv|vozidl|undesirable|neziaduc|adverse', title):
+                 r'driv|vozidl|undesirable|neziaduc|adverse|overdose|predav|'
+                 r'pharmacolog|farmakolog|preclinical|predklin|toxicolog|toxikolog', title):
         return 'smpc-clinical.txt'
     return 'smpc-other.txt'
 
