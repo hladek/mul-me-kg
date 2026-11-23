@@ -1,32 +1,32 @@
 # Ideas for a Paper on Multilingual Knowledge Graphs
 
-## Plan Phase 1 - How to generate knowledge in multilingual scenario?
+## Plan Phase 1 \- How to generate knowledge in a multilingual scenario?
 
 We could automatically create knowledge graphs for multiple languages and compare the results across languages with the same ontology on the parallel corpus.
 
-1. Finish the ontology and rule extraction framework.
-2. Set up manual the annotation. Annotate several items in multiple languages.
-3. Do evaluation study - what is the quality of the automatically generated knowledge in multiple scenarios?
+1. Finish the ontology and rule extraction framework.  
+2. Set up manual annotation. Annotate several items in multiple languages.  
+3. Do evaluation study \- what is the quality of the automatically generated knowledge in multiple scenarios?
 
-Possible resarch questions:
+Possible research questions:
 
-- How does the quality of the generate knowledge correlate with the quality of the language model?
-- What are the differences among knowledge graphs in multiple languages?
-- Can knowledge graph be transfered into different language by machine translation?
+- How does the quality of the generated knowledge correlate with the quality of the language model?  
+- What are the differences among knowledge graphs in multiple languages?  
+- Can knowledge graphs be transferred into different languages by machine translation?
 
-## Plan Phase 2 - How to utilize knowledge graphs in cross lingual scenario?
+## Plan Phase 2 \- How to utilize knowledge graphs in a cross lingual scenario?
 
-Use the dataset and the knowledge graphs to build and evaluate  cross-lingual / multilinngual question answering system:
+Use the dataset and the knowledge graphs to build and evaluate  cross-lingual / multilingual question answering system:
 
-1. Propose GraphRAG for medical question answering.
-2. Create the evaluation dataset or adjust the existing dataset. Each question will have expected answer, relevant documents and relevant knowledge.
+1. Propose GraphRAG for medical question answering.  
+2. Create the evaluation dataset or adjust the existing dataset. Each question will have expected answers, relevant documents and relevant knowledge.  
 3. Objectively evaluate the QA system in multiple scenarios.
 
 Possible research questions:
 
-- Can you mix languages in single knowledge grapsh? How?
-- Can you use multiple different language knowledge graphs with multilingual data?
-- How can you utilize knowledge gprah in cross-lingual scenario?
+- Can you mix languages in single knowledge graphs? How?  
+- Can you use multiple different language knowledge graphs with multilingual data?  
+- How can you utilize a knowledge graph in a cross-lingual scenario?
 
 ## How You Can Help
 
